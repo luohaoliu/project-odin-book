@@ -1,12 +1,9 @@
 const async = require("async");
 const { body, validationResult } = require("express-validator");
 var mongoose = require("mongoose");
-
 var Schema = mongoose.Schema;
-
 const Post = require("../models/post");
 const User = require("../models/user");
-
 exports.post_detail =  (req, res, next) => {
   Post.findById(req.params.postId)
   .populate("comments")
@@ -23,28 +20,32 @@ exports.post_detail =  (req, res, next) => {
     res.render("post_detail", { post: post, user: req.user });
   });
 };
-
 exports.post_list = (req, res, next) => {
-    var myselfAndFriends = req.user.friends;
-    myselfAndFriends.push(req.user._id);
-    Post.find({"author":  { $in: myselfAndFriends}})
+  var myselfAndFriends = req.user.friends;
+  myselfAndFriends.push(req.user._id);
+  Post.find({"author":  { $in: myselfAndFriends}})
     .populate("comments")
     .populate("author")
+    .populate({path: "comments",
+      populate: {
+        path: "author"
+      }
+    })
     .sort("-timestamp")
     .exec( (err, post_list) => {
       if (err) {
         return next(err);
       }
+      console.log("post_list:", post_list);
+      console.log("post_list[0].comments:", post_list[0].comments);
       res.render("post_list", { post_list: post_list, user: req.user });
     });
 };
-
 exports.post_create_get =  (req, res, next) => {
   if (req.user !== undefined) {
     res.render("post_form", { title: "Add a blog post", post: {title: "", content: ""} });
   }
 };
-
 exports.post_create_post = [
   body("title", "Title cannot be blank").trim().isLength({ min: 1 }).escape(),
   body("post", "Blog post cannot be blank")
@@ -79,7 +80,6 @@ exports.post_create_post = [
     }
   },
 ];
-
 exports.post_update_get = (req, res, next) => {
   Post.findById(req.params.postId)
     .exec((err, post) => {
@@ -93,7 +93,6 @@ exports.post_update_get = (req, res, next) => {
       }
     });
 };
-
 exports.post_update_post = [
   body("title", "Title cannot be blank").trim().isLength({ min: 1 }).escape(),
   body("post", "Blog post cannot be blank")
@@ -134,11 +133,9 @@ exports.post_update_post = [
     }
   },
 ];
-
 exports.post_delete_get = (req, res, next) => {
   res.render("post_delete", {title: "This will permanently remove this blog post. Are you sure?", postId: req.params.postId });
 };
-
 exports.post_delete = (req, res, next) => {
   Post.findByIdAndRemove(req.body.postid, function deleteItem(err) {
     if (err) {

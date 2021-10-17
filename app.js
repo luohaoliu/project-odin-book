@@ -5,6 +5,7 @@ var path = require("path");
 var cookieParser = require("cookie-parser");
 var logger = require("morgan");
 var cors = require('cors');
+const passport = require("passport");
 
 require('./mongoose');
 require('./passport');
@@ -32,6 +33,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(cors({
   origin: ['https://localhost:3000']
 }));
+
+app.use(passport.initialize());
+
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/posts', postsRouter);

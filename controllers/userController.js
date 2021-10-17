@@ -4,8 +4,9 @@ const passport = require("passport");
 const bcrypt = require("bcryptjs");
 const jwt = require('jsonwebtoken');
 const express = require('express');
-
+const mongoose = require("mongoose");
 const User = require("../models/user");
+const Post = require("../models/post")
 const { deleteOne } = require("../models/user");
 
 exports.user_login_get = (req, res, next) => {
@@ -34,20 +35,16 @@ exports.user_login_post = (req, res, next) => {
     });
   })(req, res, next);
 }
-
 exports.user_logout_get = (req, res) => {
   res.clearCookie("token");
   res.redirect("/posts");
 };
-
 exports.user_list = (res, req, next) => {
   res.send("NOT IMPLEMENTED: User list GET");
 }
-
 exports.user_signup_get = (req, res, next) => {
   res.render("signup_form", { title: "Create an account" });
 };
-
 exports.user_signup_post = [
   body("firstname", "First name cannot be blank")
     .trim()
@@ -102,22 +99,44 @@ exports.user_signup_post = [
 ];
 
 exports.user_detail_get = (req, res, next) => {
-    res.send("NOT IMPLEMENTED: User detail GET");
-
-};  
+  async.parallel( 
+    {
+      user: cb => {
+        User.findById(req.user._id)
+          .populate("friends")
+          .populate("friend_requests")
+          .exec(cb)
+      },
+      post_list: cb => {
+        Post.find({author: req.user._id})
+        .populate("comments")
+        .populate("author")
+        .populate({path: "comments",
+          populate: {
+            path: "author"
+          }
+        })
+        .exec(cb)
+      }
+    },
+    (err, results) => {
+      if (err) {
+        return next(err);
+      }
+      res.render("user_detail", { user: results.user, post_list: results.post_list });
+    }
+  )
+};
 
 exports.user_update_get = (req, res, next) => {
   res.send("NOT IMPLEMENTED: User update GET");
 };
-
 exports.user_update_post = (req, res, next) => {
   res.send("NOT IMPLEMENTED: User update POST");
 };
-
 exports.user_delete_get = (req, res, next) => {
   res.send("NOT IMPLEMENTED: User delete GET");
 };
-
 exports.user_delete = (req, res, next) => {
   res.send("NOT IMPLEMENTED: User DELETE");
-}; 
+};
