@@ -1,10 +1,10 @@
 extends layout
 
 include ./header.pug
-include ./post.pug
-include ./posts.pug
+include ./user.pug
+include ./users.pug
 
 block content
   +header
   div.pt-24
-    +posts(post_list)
+    +users(user_list) 

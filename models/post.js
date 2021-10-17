@@ -4,12 +4,14 @@ const { DateTime } = require("luxon");
 var Schema = mongoose.Schema;
 
 var PostSchema = new Schema({
-  title: { type: String },
+
   author: { type: Schema.Types.ObjectId, ref: "User"},
   timestamp: { type: Date },
   content: { type: String },
   likes: [{ type: Schema.Types.ObjectId, ref: "User"}],
   comments: [{type: Schema.Types.ObjectId, ref: "Comment"}],
+  target: { type: Schema.Types.ObjectId, ref: "User"},
+
 });
 
 PostSchema.virtual("timestamp_formatted").get(function () {

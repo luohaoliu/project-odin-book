@@ -23,7 +23,7 @@ exports.post_detail =  (req, res, next) => {
 exports.post_list = (req, res, next) => {
   var myselfAndFriends = req.user.friends;
   myselfAndFriends.push(req.user._id);
-  Post.find({"author":  { $in: myselfAndFriends}})
+  Post.find({"target":  { $in: myselfAndFriends}})
     .populate("comments")
     .populate("author")
     .populate({path: "comments",
@@ -36,8 +36,7 @@ exports.post_list = (req, res, next) => {
       if (err) {
         return next(err);
       }
-      console.log("post_list:", post_list);
-      console.log("post_list[0].comments:", post_list[0].comments);
+
       res.render("post_list", { post_list: post_list, user: req.user });
     });
 };
@@ -47,7 +46,6 @@ exports.post_create_get =  (req, res, next) => {
   }
 };
 exports.post_create_post = [
-  body("title", "Title cannot be blank").trim().isLength({ min: 1 }).escape(),
   body("post", "Blog post cannot be blank")
     .trim()
     .isLength({ min: 1 })
@@ -55,14 +53,25 @@ exports.post_create_post = [
   (req, res, next) => {
     const errors = validationResult(req);
     console.log("errors: ", errors);
+    console.log("req.params.id: ", req.params.id);
+    console.log("req.user._id: ", req.user._id);
+    if (req.params.id !== undefined) {
+      var target = req.params.id;
+
+    } else {
+      var target = req.user._id;
+    }
+
     const post = new Post({
-      title: req.body.title,
+
       author: req.user._id,
       timestamp: new Date(),
       content: req.body.post,
       likes: [],
+      target: target,
       errors: errors,
     });
+    console.log("post: ", post);
     if (!errors.isEmpty()) {
       res.render("post_form", {
         post: post,

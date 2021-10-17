@@ -12,7 +12,6 @@ const { deleteOne } = require("../models/user");
 exports.user_login_get = (req, res, next) => {
   res.render("login_form", { title: "Login" });
 };
-
 exports.user_login_post = (req, res, next) => {
   passport.authenticate("local", { session: false }, (err, user, message) => {
     if (err) {
@@ -39,9 +38,24 @@ exports.user_logout_get = (req, res) => {
   res.clearCookie("token");
   res.redirect("/posts");
 };
+
 exports.user_list = (res, req, next) => {
-  res.send("NOT IMPLEMENTED: User list GET");
+  User.find()
+    .exec((err, user_list) => {
+      if (err) {
+        return next(err);
+      }
+      console.log("req.user: ", req.user);
+      console.log("user_list: ", user_list);
+      res.render("user_list", { user_list: user_list });
+      }
+    )
+
 }
+
+
+
+
 exports.user_signup_get = (req, res, next) => {
   res.render("signup_form", { title: "Create an account" });
 };
@@ -77,6 +91,8 @@ exports.user_signup_post = [
         friends: [],
         friend_requests: [],
         picture: "",
+        location: req.body.location,
+        birthday: req.body.dob,
       });
       if (!errors.isEmpty()) {
         console.log("errors: ", errors.array());
@@ -101,21 +117,23 @@ exports.user_signup_post = [
 exports.user_detail_get = (req, res, next) => {
   async.parallel( 
     {
-      user: cb => {
-        User.findById(req.user._id)
+      user_info: cb => {
+        User.findById(req.params.id)
           .populate("friends")
           .populate("friend_requests")
           .exec(cb)
       },
       post_list: cb => {
-        Post.find({author: req.user._id})
+        Post.find({$or: [{author: req.params.id}, {target: req.params.id}]})
         .populate("comments")
         .populate("author")
+        .populate("target")
         .populate({path: "comments",
           populate: {
             path: "author"
           }
         })
+        .sort("-timestamp")
         .exec(cb)
       }
     },
@@ -123,7 +141,7 @@ exports.user_detail_get = (req, res, next) => {
       if (err) {
         return next(err);
       }
-      res.render("user_detail", { user: results.user, post_list: results.post_list });
+      res.render("user_detail", { user_info: results.user_info, post_list: results.post_list, user: req.user  });
     }
   )
 };
@@ -140,3 +158,16 @@ exports.user_delete_get = (req, res, next) => {
 exports.user_delete = (req, res, next) => {
   res.send("NOT IMPLEMENTED: User DELETE");
 };
+
+exports.user_friends_get = (req, res, next) => {
+  console.log("req.user.friends: ", req.user.friends);
+  User.findById(req.user.friends)
+    .exec((err, user_list) => {
+      if (err) {
+        return next(err);
+      }
+      console.log("user_list: ", user_list);
+      res.render("user_list", { user_list: user_list });
+      }
+    )
+}
