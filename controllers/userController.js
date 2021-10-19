@@ -45,8 +45,7 @@ exports.user_list = (res, req, next) => {
       if (err) {
         return next(err);
       }
-      console.log("req.user: ", req.user);
-      console.log("user_list: ", user_list);
+
       res.render("user_list", { user_list: user_list, user: req.user });
       }
     )
@@ -184,7 +183,6 @@ exports.user_addfriend_get = (req, res, next) => {
 };
 
 exports.user_addfriend_post = (req, res, next) => {
-  console.log("req.body.friendaddid: ", req.body.friendaddid);
   User.findByIdAndUpdate( req.body.friendaddid, { $addToSet: { friend_requests: [req.user._id]}
   }, err => {
     if (err) {
@@ -196,21 +194,18 @@ exports.user_addfriend_post = (req, res, next) => {
 
 
 exports.user_requests_get = (req, res, next) => {
-  console.log("req.user: ", req.user);
   User.findById(req.user._id)
     .populate("friend_requests")
     .exec((err, user) => {
       if (err) {
         return next(err);
       }
-      console.log("user: ", user);
       res.render("request_list", { request_list: user.friend_requests, user: req.user });
       }
     )
 };
 
 exports.user_requests_post = (req, res, next) => {
-  console.log("req.body.request: ", req.body.requestid);
   async.parallel([
     cb => {
       User.findByIdAndUpdate( req.body.requestid, { $addToSet: { friends: [req.user._id]}})

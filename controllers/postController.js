@@ -54,8 +54,7 @@ exports.post_create_post = [
   (req, res, next) => {
     const errors = validationResult(req);
     console.log("errors: ", errors);
-    console.log("req.params.id: ", req.params.id);
-    console.log("req.user._id: ", req.user._id);
+    
     if (req.params.id !== undefined) {
       var target = req.params.id;
 
@@ -72,7 +71,7 @@ exports.post_create_post = [
       target: target,
       errors: errors,
     });
-    console.log("post: ", post);
+
     if (!errors.isEmpty()) {
       res.render("post_form", {
         post: post,
