@@ -40,7 +40,7 @@ exports.user_logout_get = (req, res) => {
 };
 
 exports.user_list = (res, req, next) => {
-  User.find()
+  User.find({$or: [{_id: { $ne: req.user._id }}]})
     .exec((err, user_list) => {
       if (err) {
         return next(err);
@@ -160,14 +160,14 @@ exports.user_delete = (req, res, next) => {
 };
 
 exports.user_friends_get = (req, res, next) => {
-  console.log("req.user.friends: ", req.user.friends);
-  User.findById(req.user.friends)
-    .exec((err, user_list) => {
+  User.findById(req.params.id)
+    .populate("friends")
+    .exec((err, user) => {
       if (err) {
         return next(err);
       }
-      console.log("user_list: ", user_list);
-      res.render("friend_list", { user_list: user_list, user: req.user });
+      console.log("user: ", user);
+      res.render("friend_list", { friend_list: user.friends, user: req.user, id: req.params.id });
       }
     )
 }
@@ -186,7 +186,7 @@ exports.user_addfriend_get = (req, res, next) => {
 exports.user_addfriend_post = (req, res, next) => {
   console.log("req.body.friendaddid: ", req.body.friendaddid);
   User.findByIdAndUpdate( req.body.friendaddid, { $addToSet: { friend_requests: [req.user._id]}
-  },function (err) {
+  }, err => {
     if (err) {
       return next(err);
     }
@@ -210,9 +210,26 @@ exports.user_requests_get = (req, res, next) => {
 };
 
 exports.user_requests_post = (req, res, next) => {
-  console.log("req.body.friendaddid: ", req.body.friendaddid);
-  User.findByIdAndUpdate( req.body.friendaddid, { $addToSet: { friend_requests: [req.user._id]}
-  },function (err) {
+  console.log("req.body.request: ", req.body.requestid);
+  async.parallel([
+    cb => {
+      User.findByIdAndUpdate( req.body.requestid, { $addToSet: { friends: [req.user._id]}})
+        .exec(cb);
+    },
+    cb => {
+      User.findByIdAndUpdate( req.user._id, { $addToSet: { friends: [req.body.requestid]}})
+        .exec(cb);
+    },
+    cb => {
+      User.findByIdAndUpdate( req.user._id, { $pull: { friend_requests: req.body.requestid}})
+        .exec(cb);
+    }
+    ,
+    cb => {
+      User.findByIdAndUpdate( req.body.requestid, { $pull: { friend_requests: req.user._id}})
+        .exec(cb);
+    }
+  ],err => {
     if (err) {
       return next(err);
     }
