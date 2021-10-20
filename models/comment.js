@@ -8,6 +8,8 @@ var CommentSchema = new Schema({
   timestamp: { type: Date },
   content: { type: String },
   post: { type: Schema.Types.ObjectId, ref: "Post"},
+  likes: [{ type: Schema.Types.ObjectId, ref: "User"}],
+
 });
 
 CommentSchema.virtual("timestamp_formatted").get(function () {

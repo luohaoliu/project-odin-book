@@ -42,4 +42,8 @@ router.get("/:postId/comments/:commentId/edit", passport.authenticate('jwt', {se
 router.post("/:postId/comments/:commentId/edit", passport.authenticate('jwt', {session: false}), comment_controller.comment_update_post);
 router.get("/:postId/comments/:commentId/delete", passport.authenticate('jwt', {session: false}), comment_controller.comment_delete_get);
 router.post("/:postId/comments/:commentId/delete", passport.authenticate('jwt', {session: false}), comment_controller.comment_delete);
+
+router.post("/:postId/comments/:commentId/like", passport.authenticate('jwt', {session: false}), comment_controller.comment_like_post);
+
+
 module.exports = router;
