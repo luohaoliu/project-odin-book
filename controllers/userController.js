@@ -56,8 +56,10 @@ exports.user_list = (res, req, next) => {
 
 
 exports.user_signup_get = (req, res, next) => {
-  res.render("signup_form", { title: "Create an account" });
+  res.render("signup_form", { title: "Create an account", return_address: req.headers.referer });
 };
+
+
 exports.user_signup_post = [
   body("firstname", "First name cannot be blank")
     .trim()
@@ -99,6 +101,7 @@ exports.user_signup_post = [
           user: user,
           title: "Create an account",
           errors: errors.array(),
+          return_address: req.headers.referer,
         });
         return;
       } else {
@@ -106,7 +109,7 @@ exports.user_signup_post = [
           if (err) {
             return next(err);
           }
-          res.redirect("/");
+          res.redirect(req.headers.referer);
         });
       }
     });
@@ -140,14 +143,21 @@ exports.user_detail_get = (req, res, next) => {
       if (err) {
         return next(err);
       }
-      res.render("user_detail", { user_info: results.user_info, post_list: results.post_list, user: req.user  });
+      res.render("user_detail", { user_info: results.user_info, post_list: results.post_list, user: req.user});
     }
   )
 };
 
 exports.user_update_get = (req, res, next) => {
-  res.send("NOT IMPLEMENTED: User update GET");
+  User.findById(req.user._id)
+    .exec((err, post) => {
+      if (err) {
+        return next(err);
+      }
+      res.render("user_form", {user: req.user, title: "Edit your profile", return_address: req.headers.referer});
+    });
 };
+
 exports.user_update_post = (req, res, next) => {
   res.send("NOT IMPLEMENTED: User update POST");
 };

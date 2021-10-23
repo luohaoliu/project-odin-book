@@ -38,13 +38,13 @@ exports.post_list = (req, res, next) => {
         return next(err);
       }
 
-      res.render("post_list", { post_list: post_list, user: req.user });
+      res.render("post_list", { post_list: post_list, user: req.user});
     });
 };
 
 exports.post_create_get =  (req, res, next) => {
   if (req.user !== undefined) {
-    res.render("post_form", { title: "Add a post", post: {title: "", content: ""}, return_address: req.headers.referer });
+    res.render("post_form", { title: "Add a post", post: {title: "", content: ""}});
 
   }
 };
@@ -52,8 +52,7 @@ exports.post_create_get =  (req, res, next) => {
 exports.post_create_post = [
   body("post", "Post cannot be blank")
     .trim()
-    .isLength({ min: 1 })
-    .escape(),
+    .isLength({ min: 1 }),
   (req, res, next) => {
     const errors = validationResult(req);
     console.log("errors: ", errors);
@@ -78,7 +77,7 @@ exports.post_create_post = [
     if (!errors.isEmpty()) {
       res.render("post_form", {
         post: post,
-        title: "Add a blog post",
+        title: "Add a post",
         errors: errors.array(),
       });
       return;
@@ -87,14 +86,14 @@ exports.post_create_post = [
         if (err) {
           return next(err);
         }
-        res.redirect(req.body.return_address);
+        console.log("req", req);
+        res.redirect(req.originalUrl);
       });
     }
   },
 ];
 
 exports.post_update_get = (req, res, next) => {
-  console.log("req.headers: ", req.headers);
 
   Post.findById(req.params.postId)
     .exec((err, post) => {
@@ -103,7 +102,7 @@ exports.post_update_get = (req, res, next) => {
       }
       if (req.user !== undefined ) {
         if (req.user._id.toString() === post.author._id.toString()) {
-          res.render("post_form", {post: post, title: "Edit your blog post", return_address: req.headers.referer});
+          res.render("post_form", {post: post, title: "Edit your post", return_address: req.headers.referer});
 
         }
       }
@@ -116,7 +115,6 @@ exports.post_update_post = [
     .isLength({ min: 1 })
     .escape(),
   (req, res, next) => {
-    console.log("req.headers: ", req.headers);
 
     const errors = validationResult(req);
     console.log("errors: ", errors);
@@ -131,7 +129,7 @@ exports.post_update_post = [
     if (!errors.isEmpty()) {
       res.render("post_form", {
         post: post,
-        title: "Add a blog post",
+        title: "Add a post",
         errors: errors.array(),
       });
       return;
