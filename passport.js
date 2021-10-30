@@ -83,7 +83,7 @@ passport.use(new FacebookStrategy({
         .on('error', err => {
           console.error(err)
         })
-        .pipe(fs.createWriteStream("./public/images/" + profile.id + ".jpg"));
+        .pipe(fs.createWriteStream("./public/images/profile/" + profile.id + ".jpg"));
 
       var user = new User({
         first_name: profile.name.givenName,
