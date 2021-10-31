@@ -8,6 +8,10 @@ const mongoose = require("mongoose");
 const User = require("../models/user");
 const Post = require("../models/post")
 const { deleteOne } = require("../models/user");
+var fs = require('fs');
+var path = require('path');
+var htmlentities = require('html-entities');
+
 
 exports.user_login_get = (req, res, next) => {
   res.render("login_form", { title: "Login" });
@@ -39,6 +43,7 @@ exports.user_login_post = (req, res, next) => {
 
 exports.facebook_login = (req, res, next) => {
   passport.authenticate("facebook", {session: false}, (err, user, info) => {
+    console.log("facebook login started");
     if (err) return next(err);
     const payload = {
       username: user.username,
@@ -104,8 +109,12 @@ exports.user_signup_post = [
       }
       if (!req.file) {
         var picture = "user-placeholder.svg";
+        var mimeType = "image/svg+xml"
+
       } else {
-        var picture = req.file.filename;
+        var picture = "profile/" + req.file.filename;
+        var mimeType = req.file.mimetype;
+
       }
       const user = new User({
         first_name: req.body.firstname,
@@ -116,6 +125,10 @@ exports.user_signup_post = [
         friends: [],
         friend_requests: [],
         picture: picture,
+        image: {
+          data: fs.readFileSync(path.join(__dirname + '/../public/images/' + picture)),
+          contentType: mimeType
+        },
         location: req.body.location,
         birthday: req.body.dob,
         facebookId: req.body.facebookId
@@ -168,8 +181,28 @@ exports.user_detail_get = (req, res, next) => {
       if (err) {
         return next(err);
       }
-      res.render("user_detail", { user_info: results.user_info, post_list: results.post_list, user: req.user});
-    }
+      const post_list_decode = results.post_list.map(e => { 
+        const comments = e.comments.map(f => { 
+          return {
+          author: f.author,
+          timestamp: f.timestamp,
+          content: htmlentities.decode(f.content),
+          post: f.post,
+          likes: f.likes,
+          _id: f._id
+        }});
+        return {
+        author: e.author,
+        timestamp: e.timestamp,
+        content: htmlentities.decode(e.content),
+        likes: e.likes,
+        comments: comments,
+        target: e.target,
+        _id: e._id
+
+      }})
+      res.render("user_detail", { user_info: results.user_info, post_list: post_list_decode, user: req.user});   
+     }
   )
 };
 

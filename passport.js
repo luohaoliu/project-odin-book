@@ -8,6 +8,7 @@ const bcrypt = require("bcryptjs");
 const FacebookStrategy = require('passport-facebook').Strategy;
 const request = require('request');
 const fs = require('fs');
+var path = require('path');
 
 
 const User = require("./models/user");
@@ -70,38 +71,45 @@ passport.use(new FacebookStrategy({
   profileFields: ["first_name", "last_name", "picture.type(large)"],
 },
 (accessToken, refreshToken, profile, done) => {
+
   User.findOne({facebookId: profile.id}).exec((err, res) => {
     if (err) {
+      console.log("facebook login threw an error");
       return done(err, false);
     }
     if (!res) {
       console.log("Importing facebook details.");
-      request(profile.photos[0].value)
-        .on('response', response => {
-          console.log("Requested facebook profile picture", response.statusCode)
-        })
-        .on('error', err => {
-          console.error(err)
-        })
-        .pipe(fs.createWriteStream("./public/images/profile/" + profile.id + ".jpg"));
+      var requestSettings = {
+        method: 'GET',
+        url: profile.photos[0].value,
+        encoding: null,
+      }
+      request(requestSettings, (error, response, body) => {
+        console.log("response: ", response);
 
-      var user = new User({
-        first_name: profile.name.givenName,
-        last_name: profile.name.familyName,
-        username: "",
-        password: "",
-        status: "user",
-        friends: [],
-        friend_requests: [],
-        picture: profile.id + ".jpg",
-        facebookId: profile.id
-      });
-      user.save( err => {
-        if (err) {
-          return next(err);
-        }
-        done(null, user);
-      });
+        var user = new User({
+          first_name: profile.name.givenName,
+          last_name: profile.name.familyName,
+          username: "",
+          password: "",
+          status: "user",
+          friends: [],
+          friend_requests: [],
+          picture: profile.id + ".jpg",
+          image: {
+            data: body,
+            contentType: response.headers[content-type]
+          },
+          facebookId: profile.id
+        });
+        console.log("user: ", user);
+        user.save( err => {
+          if (err) {
+            return next(err);
+          }
+          done(null, user);
+        });
+      })
     } else {
       console.log("Found the facebook user. Logging in now.");
       var user = res;

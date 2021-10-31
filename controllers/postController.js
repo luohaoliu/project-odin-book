@@ -1,6 +1,10 @@
 const async = require("async");
 const { body, validationResult } = require("express-validator");
 var mongoose = require("mongoose");
+var htmlentities = require('html-entities');
+
+
+
 var Schema = mongoose.Schema;
 const Post = require("../models/post");
 const User = require("../models/user");
@@ -38,8 +42,30 @@ exports.post_list = (req, res, next) => {
         return next(err);
       }
 
-      res.render("post_list", { post_list: post_list, user: req.user});
-    });
+      const post_list_decode = post_list.map(e => { 
+        const comments = e.comments.map(f => { 
+          console.log("f.content: ", f.content);
+          console.log("htmlentities.decode(f.content): ", htmlentities.decode(f.content));
+          return {
+          author: f.author,
+          timestamp: f.timestamp,
+          content: htmlentities.decode(f.content),
+          post: f.post,
+          likes: f.likes,
+          _id: f._id
+
+        }});
+        return {
+        author: e.author,
+        timestamp: e.timestamp,
+        content: htmlentities.decode(e.content),
+        likes: e.likes,
+        comments: comments,
+        target: e.target,
+        _id: e._id
+
+      }})
+      res.render("post_list", { post_list: post_list_decode, user: req.user});    });
 };
 
 exports.post_create_get =  (req, res, next) => {
@@ -52,7 +78,8 @@ exports.post_create_get =  (req, res, next) => {
 exports.post_create_post = [
   body("post", "Post cannot be blank")
     .trim()
-    .isLength({ min: 1 }),
+    .isLength({ min: 1 })
+    .escape(),
   (req, res, next) => {
     const errors = validationResult(req);
     console.log("errors: ", errors);
